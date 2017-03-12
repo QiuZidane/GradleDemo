@@ -1,0 +1,113 @@
+package groovy
+// this is a DSLD file
+// start off creating a custom DSL Descriptor for your Groovy DSL
+
+// The following snippet adds the 'newProp' to all types that are a subtype of GroovyObjects
+// contribute(currentType(subType('groovy.lang.GroovyObject'))) {
+//   property name : 'newProp', type : String, provider : 'Sample DSL', doc : 'This is a sample.  You should see this in content assist for GroovyObjects: <pre>newProp</pre>'
+// }
+
+// 没有def等任何定义的可被binding.variable.参数名所访问
+
+def c = 5
+assert c == 5
+d = 6
+assert d == 6 	//def keyword optional because we're within a script context
+assert binding.variables.c == null // 无效
+assert binding.variables.d == 6    //when def not used, variable becomes part of binding.variables
+
+println c // 仍然是5
+println binding.variables // [args:[], d:6]
+
+
+try{
+	h = 9
+	assert binding.variables.h == 9
+} catch(Exception e){
+
+}
+assert h == 9
+assert binding.variables.h == 9
+
+println binding.variables // [args:[], d:6, h:9]
+
+// 闭包的参数声明写在‘->’符号前
+def toTriple = {n -> n * 3}
+// 两种调用方式
+assert toTriple.call( 5 ) == 15
+assert toTriple( 5 ) == 15
+
+c = { it = 123 }
+
+it= 2
+c= {  println it; assert it == 3; assert owner.it == 2 } // owner.it表示脚本范围的it参数
+c(3)
+
+def times= { x ->
+	println "x=$x"
+	{ y -> x * y }
+}
+def times1= { x ->	{ y -> x * y } } // 接收两个参数, 第一个是x, 第二个是y
+def result = times(3)(4)
+println result
+
+// 闭包接受参数的规则，会将参数列表中所有有键值关系的参数，作为一个map组装，传入闭包作为调用闭包的第一个参数。
+def f= {m, i, j-> println "m=$m, i=$i, j=$j";  i + j + m.x + m.y }
+assert f(6, x:4, y:3, 7) == 20
+
+// 当闭包作为闭包或方法的最后一个参数。可以将闭包从参数圆括号中提取出来接在最后
+def runTwice = { a1, c1 -> c1(c1(a1)) }
+assert runTwice( 5, {it * 3} ) == 45 //usual syntax
+assert runTwice( 5 ){it * 3} == 45
+
+// 如果闭包是唯一的一个参数，则闭包或方法参数所在的圆括号也可以省略
+def runTwiceAndConcat = { c2 -> c2() + c2() }
+assert runTwiceAndConcat( { 'plate' } ) == 'plateplate' //usual syntax
+assert runTwiceAndConcat(){ 'bowl' } == 'bowlbowl' //shortcut form
+assert runTwiceAndConcat{ 'mug' } == 'mugmug'
+
+// 对于有多个闭包参数的，只要是在参数声明最后的，均可以按上述方式省略
+def runTwoClosures = { a, c1, c2 -> c1(c2(a)) }
+//when more than one closure as last params
+assert runTwoClosures( 5, {it*3}, {it*4} ) == 60 //usual syntax
+assert runTwoClosures( 5 ){it*3}{it*4} == 60 //shortcut form
+
+// 默认值
+def e = { a, b=2, c2, d='a' -> "a=$a b=$b c2=$c2 ${a+b+c2}$d" }
+println e(1,3)
+
+
+def c3 = { arg, Object[] extras ->
+	println "arg=$arg extras=$extras"
+	def list= []
+	println list<< arg
+	extras.each{ list<< it }
+	list << 5  // <<是往list中加值的方法
+	println list
+}
+
+c3(1,2,3)
+//println c3(1,2,3)
+
+// curry方法，该方法的作用是锁定闭包的首个参数
+def concat = { p1, p2, p3 -> "$p1 $p2 $p3" }
+def concatAfterFly = concat.curry( 'fly' )
+assert concatAfterFly( 'drive', 'cycle' ) == 'fly drive cycle'
+def concatAfterFlySwim = concatAfterFly.curry( 'swim' )
+assert concatAfterFlySwim( 'walk' ) == 'fly swim walk' 
+println 28%35
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
